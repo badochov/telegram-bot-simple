@@ -15,6 +15,7 @@ import qualified System.Cron             as Cron
 
 import qualified Telegram.Bot.API        as Telegram
 import           Telegram.Bot.Simple.Eff
+import System.TimeIt (timeItNamed)
 
 -- | A bot application.
 data BotApp model action = BotApp
@@ -100,7 +101,7 @@ processAction
   -> action
   -> ClientM ()
 processAction BotApp{..} botEnv@BotEnv{..} update action = do
-  effects <- liftIO $ atomically $ do
+  effects <- liftIO $ timeItNamed "BOT HANDLER" $ atomically $ do
     model <- readTVar botModelVar
     case runEff (botHandler action model) of
       (newModel, effects) -> do

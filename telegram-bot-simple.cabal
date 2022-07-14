@@ -90,6 +90,7 @@ library
     , template-haskell
     , text
     , time
+    , timeit
     , transformers
     , unordered-containers
     , warp
@@ -127,6 +128,7 @@ executable example-echo-bot
     , template-haskell
     , text
     , time
+    , timeit
     , transformers
     , unordered-containers
     , warp
@@ -169,6 +171,7 @@ executable example-echo-bot-webhook
     , template-haskell
     , text
     , time
+    , timeit
     , transformers
     , unordered-containers
     , warp
@@ -211,6 +214,7 @@ executable example-game-bot
     , template-haskell
     , text
     , time
+    , timeit
     , transformers
     , unordered-containers
     , warp
@@ -266,6 +270,7 @@ executable example-todo-bot
     , template-haskell
     , text
     , time
+    , timeit
     , transformers
     , unordered-containers
     , warp

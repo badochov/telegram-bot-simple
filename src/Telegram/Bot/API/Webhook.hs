@@ -41,6 +41,7 @@ import           Telegram.Bot.Simple.BotApp.Internal
 import Debug.Trace (trace)
 import Control.DeepSeq (deepseq)
 import Data.Time.Clock.POSIX (getPOSIXTime)
+import System.TimeIt (timeItNamed)
 
 type WebhookAPI = ReqBody '[JSON] Update :> Post '[JSON] ()
 
@@ -55,7 +56,7 @@ server BotApp {..} botEnv@BotEnv {..} update =
       Nothing -> ""
       Just m -> show $ messageDate m
     updateHandler :: Update -> Handler ()
-    updateHandler update = liftIO $ handleUpdate update
+    updateHandler update = liftIO $ timeItNamed "HANDLE UPDATE" $ handleUpdate update
     handleUpdate update = liftIO . void . forkIO $ do
       action <- readTVarIO botModelVar
       ts <- action `seq` timestamp

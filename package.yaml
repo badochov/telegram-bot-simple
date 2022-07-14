@@ -51,6 +51,7 @@ dependencies:
 - template-haskell
 - text
 - time
+- timeit
 - transformers
 - unordered-containers
 - warp
