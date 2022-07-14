@@ -6,6 +6,7 @@ module Telegram.Bot.Simple.BotApp.Internal where
 import           Control.Concurrent      (ThreadId, forkIO, threadDelay)
 import           Control.Concurrent.STM
 import           Control.Monad           (forever, void, (<=<))
+import           Control.Monad.Catch
 import           Control.Monad.Except    (catchError)
 import           Control.Monad.Trans     (liftIO)
 import           Data.Bifunctor          (first)
@@ -18,15 +19,17 @@ import           Telegram.Bot.Simple.Eff
 
 -- | A bot application.
 data BotApp model action = BotApp
-  { botInitialModel :: model
+  { botInitialModel      :: model
     -- ^ Initial bot state.
-  , botAction       :: Telegram.Update -> model -> Maybe action
+  , botAction            :: Telegram.Update -> model -> Maybe action
     -- ^ How to convert incoming 'Telegram.Update's into @action@s.
     -- See "Telegram.Bot.Simple.UpdateParser" for some helpers.
-  , botHandler      :: action -> model -> Eff action model
+  , botHandler           :: action -> model -> Eff action model
     -- ^ How to handle @action@s.
-  , botJobs         :: [BotJob model action]
+  , botJobs              :: [BotJob model action],
     -- ^ Background bot jobs.
+    botExceptionHandlers :: [Handler BotM ()]
+    -- ^ Exception handlers.
   }
 
 -- | A background bot job.
@@ -122,7 +125,7 @@ processActionsIndefinitely botApp botEnv = forkIO . forever $ do
 
 -- | Start 'Telegram.Update' polling for a bot.
 startBotPolling :: BotApp model action -> BotEnv model action -> ClientM ()
-startBotPolling BotApp{..} botEnv@BotEnv{..} = startPolling handleUpdate
+startBotPolling BotApp{..} botEnv@BotEnv{..} = startPolling botExceptionHandlers botUser handleUpdate
   where
     handleUpdate update = liftIO . void . forkIO $ do
       maction <- botAction update <$> readTVarIO botModelVar
@@ -131,8 +134,8 @@ startBotPolling BotApp{..} botEnv@BotEnv{..} = startPolling handleUpdate
         Just action -> issueAction botEnv (Just update) (Just action)
 
 -- | Start 'Telegram.Update' polling with a given update handler.
-startPolling :: (Telegram.Update -> ClientM a) -> ClientM a
-startPolling handleUpdate = go Nothing
+startPolling :: [Handler BotM a] -> Telegram.User -> (Telegram.Update -> ClientM a) -> ClientM a
+startPolling handlers user handleUpdate = go Nothing
   where
     go lastUpdateId = do
       let inc (Telegram.UpdateId n) = Telegram.UpdateId (n + 1)
@@ -150,7 +153,10 @@ startPolling handleUpdate = go Nothing
           let updates = Telegram.responseResult result
               updateIds = map Telegram.updateUpdateId updates
               maxUpdateId = maximum (Nothing : map Just updateIds)
-          mapM_ handleUpdate updates
+          mapM_ handleUpdate' updates
           pure maxUpdateId
       liftIO $ threadDelay 1000000
       go nextUpdateId
+    handleUpdate' up = handleUpdate up `catches` handlers' (Just up)
+    handlers' up = map (handlerMap up) handlers
+    handlerMap up (Handler fn) = Handler $ runBotM (BotContext user up) . fn

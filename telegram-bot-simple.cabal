@@ -69,6 +69,7 @@ library
     , base >=4.9 && <5
     , bytestring
     , cron >=0.7.0
+    , exceptions
     , filepath
     , hashable
     , http-api-data
@@ -102,6 +103,7 @@ executable example-echo-bot
     , base >=4.9 && <5
     , bytestring
     , cron >=0.7.0
+    , exceptions
     , filepath
     , hashable
     , http-api-data
@@ -140,6 +142,7 @@ executable example-game-bot
     , base >=4.9 && <5
     , bytestring
     , cron >=0.7.0
+    , exceptions
     , filepath
     , hashable
     , http-api-data
@@ -191,6 +194,7 @@ executable example-todo-bot
     , base >=4.9 && <5
     , bytestring
     , cron >=0.7.0
+    , exceptions
     , filepath
     , hashable
     , http-api-data

@@ -3,9 +3,9 @@
 module Telegram.Bot.Simple.Conversation where
 
 import           Data.Bifunctor
-import           Data.Hashable              (Hashable)
 import           Data.HashMap.Strict        (HashMap)
 import qualified Data.HashMap.Strict        as HashMap
+import           Data.Hashable              (Hashable)
 import           Data.Maybe                 (fromMaybe)
 
 import qualified Telegram.Bot.API           as Telegram
@@ -25,10 +25,11 @@ conversationBot
   -> BotApp model action
   -> BotApp (HashMap (Maybe conversation) model) (Maybe conversation, action)
 conversationBot toConversation BotApp{..} = BotApp
-  { botInitialModel = conversationInitialModel
-  , botAction       = conversationAction
-  , botHandler      = conversationHandler
-  , botJobs         = conversationJobs
+  { botInitialModel      = conversationInitialModel
+  , botAction            = conversationAction
+  , botHandler           = conversationHandler
+  , botJobs              = conversationJobs
+  , botExceptionHandlers = botExceptionHandlers
   }
   where
     conversationInitialModel = HashMap.empty
@@ -59,10 +60,11 @@ useLatestUpdateInJobs
   :: BotApp model action
   -> BotApp (Maybe Telegram.Update, model) (Maybe Telegram.Update, action)
 useLatestUpdateInJobs BotApp{..} = BotApp
-  { botInitialModel = (Nothing, botInitialModel)
-  , botAction       = newAction
-  , botHandler      = newHandler
-  , botJobs         = newJobs
+  { botInitialModel      = (Nothing, botInitialModel)
+  , botAction            = newAction
+  , botHandler           = newHandler
+  , botJobs              = newJobs
+  , botExceptionHandlers = botExceptionHandlers
   }
     where
       newAction update (_, model) = (Just update,) <$> botAction update model
