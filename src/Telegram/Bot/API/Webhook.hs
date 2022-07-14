@@ -46,7 +46,7 @@ server :: BotApp model action -> BotEnv model action -> Server WebhookAPI
 server BotApp {..} botEnv@BotEnv {..} update =
   trace (timestamp update) updateHandler update
   where
-    timestamp Update {updateMessage} = case updateMessage of
+    timestamp Update {updateMessage} = "GOT UPDATE: " ++  case updateMessage of
       Nothing -> ""
       Just m -> show $ messageDate m
     updateHandler :: Update -> Handler ()
