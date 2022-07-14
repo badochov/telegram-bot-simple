@@ -8,6 +8,7 @@
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeApplications      #-}
 {-# LANGUAGE TypeOperators         #-}
+{-# LANGUAGE NamedFieldPuns #-}
 
 module Telegram.Bot.API.Webhook
   ( setUpWebhook,
@@ -32,18 +33,22 @@ import           Servant.Client                      (ClientEnv, ClientError,
                                                       client, runClientM)
 import           Servant.Multipart.API
 import           Servant.Multipart.Client            (genBoundary)
-import           Telegram.Bot.API.GettingUpdates     (Update)
+import           Telegram.Bot.API.GettingUpdates     (Update (Update, updateMessage))
 import           Telegram.Bot.API.Internal.Utils     (gtoJSON)
 import           Telegram.Bot.API.MakingRequests     (Response)
-import           Telegram.Bot.API.Types              (InputFile, makeFile)
+import           Telegram.Bot.API.Types              (InputFile, makeFile, Message (messageDate))
 import           Telegram.Bot.Simple.BotApp.Internal
+import Debug.Trace (trace)
 
 type WebhookAPI = ReqBody '[JSON] Update :> Post '[JSON] ()
 
 server :: BotApp model action -> BotEnv model action -> Server WebhookAPI
-server BotApp {..} botEnv@BotEnv {..} =
-  updateHandler
+server BotApp {..} botEnv@BotEnv {..} update =
+  trace (timestamp update) updateHandler update
   where
+    timestamp Update {updateMessage} = case updateMessage of
+      Nothing -> ""
+      Just m -> show $ messageDate m
     updateHandler :: Update -> Handler ()
     updateHandler update = liftIO $ handleUpdate update
     handleUpdate update = liftIO . void . forkIO $ do
