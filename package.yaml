@@ -31,6 +31,7 @@ dependencies:
 - aeson-pretty
 - bytestring
 - cron >= 0.7.0
+- deepseq
 - filepath
 - hashable
 - http-api-data

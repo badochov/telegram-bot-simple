@@ -39,20 +39,28 @@ import           Telegram.Bot.API.MakingRequests     (Response)
 import           Telegram.Bot.API.Types              (InputFile, makeFile, Message (messageDate))
 import           Telegram.Bot.Simple.BotApp.Internal
 import Debug.Trace (trace)
+import Control.DeepSeq (deepseq)
+import Data.Time.Clock.POSIX (getPOSIXTime)
 
 type WebhookAPI = ReqBody '[JSON] Update :> Post '[JSON] ()
 
+timestamp :: IO Int
+timestamp = round `fmap` getPOSIXTime 
+
 server :: BotApp model action -> BotEnv model action -> Server WebhookAPI
 server BotApp {..} botEnv@BotEnv {..} update =
-  trace (timestamp update) updateHandler update
+  trace (gotUpdate update) updateHandler update
   where
-    timestamp Update {updateMessage} = "GOT UPDATE: " ++  case updateMessage of
+    gotUpdate Update {updateMessage} = "GOT UPDATE: " ++  case updateMessage of
       Nothing -> ""
       Just m -> show $ messageDate m
     updateHandler :: Update -> Handler ()
     updateHandler update = liftIO $ handleUpdate update
     handleUpdate update = liftIO . void . forkIO $ do
-      maction <- botAction update <$> readTVarIO botModelVar
+      action <- readTVarIO botModelVar
+      ts <- action `seq` timestamp
+      let maction = botAction update action
+      ts <- maction `seq` timestamp
       case maction of
         Nothing     -> return ()
         Just action -> issueAction botEnv (Just update) (Just action)
